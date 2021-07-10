@@ -3,6 +3,7 @@
 const request = require("request");
 const SWITCHBOT_TOKEN = process.env.SWITCHBOT_TOKEN;
 const LINE_TOKEN = process.env.LINE_TOKEN;
+const config = require("./config.json");
 // const LINE_CHANNELSECRET = process.env.LINE_CHANNELSECRET;
 
 
@@ -83,7 +84,8 @@ function replyLine(reptoken, resStr) {
 
 function pushAutolock() {
   return new Promise((resolve, reject) => {
-    const url = 'https://api.switch-bot.com/v1.0/devices/F319A316F2AE/commands';
+    const autolockId = config.switchbot.autolock
+    const url = `https://api.switch-bot.com/v1.0/devices/${autolockId}/commands`;
 
     let options = {
       uri: url,
