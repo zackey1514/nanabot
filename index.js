@@ -29,12 +29,13 @@ exports.handler = async (event, context) => {
   const reptoken = jsonbody.events[0].replyToken;
 
   let resStr = '';
+  const botid = config.line.botid
 
   if (reptoken == '00000000000000000000000000000000') {
     context.succeed(createResponse(200, 'Completed successfully !!'));
     console.log("Success: Response completed successfully !!");
   } else {
-    if (botid == 'U12858c8df21e071b62eb7ab44c489876') {
+    if (botid == botid) {
       if (reqtext == 'オートロック開けて') {
         resStr = '了解！オートロックを開けるから少し待ってね';
         return pushAutolock()
