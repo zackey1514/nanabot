@@ -1,11 +1,13 @@
 "use strict";
 
 const request = require("request");
+const crypto = require('crypto');
+
 const SWITCHBOT_TOKEN = process.env.SWITCHBOT_TOKEN;
 const LINE_TOKEN = process.env.LINE_TOKEN;
-const config = require("./config.json");
-// const LINE_CHANNELSECRET = process.env.LINE_CHANNELSECRET;
+const LINE_CHANNELSECRET = process.env.LINE_CHANNELSECRET;    // 秘密鍵
 
+const CONFIG = require("./config.json");
 
 // 成功時のレスポンス
 const createResponse = (statusCode, body) => {
@@ -20,14 +22,24 @@ const createResponse = (statusCode, body) => {
 
 // メイン処理
 exports.handler = async (event, context) => {
-
-  console.log(event.body);
-
   const jsonbody = JSON.parse(event.body)
   const botid = jsonbody.destination;
   const reqtext = jsonbody.events[0].message.text;
   const reptoken = jsonbody.events[0].replyToken;
   const groupid = jsonbody.events[0].source.groupId;
+
+  // 秘密鍵で復号したボディのダイジェスト値を取得する
+  const signature = crypto
+    .createHmac('SHA256', LINE_CHANNELSECRET)
+    .update(String(event.body)).digest('base64');
+  const signatureHeader = event.headers["x-line-signature"];
+
+  // ダイジェスト値と x-line-signature の署名と一致しなければ400を返す
+  if (signature !== signatureHeader) {
+    context.succeed(createResponse(400, 'There is no corresponding process ...'));
+    console.log('Signatures do not match.');
+    return;
+  }
 
   let resStr = '';
 
@@ -35,7 +47,7 @@ exports.handler = async (event, context) => {
     context.succeed(createResponse(200, 'Completed successfully !!'));
     console.log("Success: Response completed successfully !!");
   } else {
-    if (botid === config.line.botid && groupid === config.line.groupid) {
+    if (botid === CONFIG.line.botid && groupid === CONFIG.line.groupid) {
       if (reqtext == 'オートロック開けて') {
         await pushAutolock();
         resStr = '開けたよ～';
@@ -88,7 +100,7 @@ function replyLine(reptoken, resStr) {
 
 function pushAutolock() {
   return new Promise((resolve, reject) => {
-    const autolockId = config.switchbot.autolock
+    const autolockId = CONFIG.switchbot.autolock
     const url = `https://api.switch-bot.com/v1.0/devices/${autolockId}/commands`;
 
     let options = {
