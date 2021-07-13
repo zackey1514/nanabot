@@ -24,7 +24,7 @@ const createResponse = (statusCode, body) => {
 
 // メイン処理
 exports.handler = async (event, context) => {
-
+  console.log(event);
   console.log(event.body);
 
   const jsonbody = JSON.parse(event.body)
@@ -36,14 +36,13 @@ exports.handler = async (event, context) => {
   // リクエストヘッダーの x-line-signature にある署名と秘密鍵で復号したボディのダイジェスト値を比較する
   const signature = crypto
     .createHmac('SHA256', LINE_CHANNELSECRET)
-    .update(String(jsonbody)).digest('base64');
-  const signatureHeader = event.headers["X-Line-Signature"];
-  console.log(signature)
-  console.log(signatureHeader)
+    .update(String(event.body)).digest('base64');
+  const signatureHeader = event.headers["x-line-signature"];
 
   // 署名が一致しなければ400を返す
-  if (signature === signatureHeader) {
+  if (signature !== signatureHeader) {
     context.succeed(createResponse(400, 'There is no corresponding process ...'));
+    console.log('Signatures do not match.');
     return;
   }
 
