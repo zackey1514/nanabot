@@ -27,18 +27,18 @@ exports.handler = async (event, context) => {
   const botid = jsonbody.destination;
   const reqtext = jsonbody.events[0].message.text;
   const reptoken = jsonbody.events[0].replyToken;
+  const groupid = jsonbody.events[0].source.groupId;
 
   let resStr = '';
-  const botid = config.line.botid
 
-  if (reptoken == '00000000000000000000000000000000') {
+  if (reptoken === '00000000000000000000000000000000') {
     context.succeed(createResponse(200, 'Completed successfully !!'));
     console.log("Success: Response completed successfully !!");
   } else {
-    if (botid == botid) {
+    if (botid === config.line.botid && groupid === config.line.groupid) {
       if (reqtext == 'オートロック開けて') {
-        resStr = '了解！オートロックを開けるから少し待ってね';
-        return pushAutolock()
+        await pushAutolock();
+        resStr = '開けたよ～';
       } else {
         resStr = 'ばなないす♪';
       }
@@ -46,7 +46,10 @@ exports.handler = async (event, context) => {
         context.succeed(createResponse(200, 'Completed successfully !!'));
       });
     } else {
-      context.succeed(createResponse(500, 'There is no corresponding process ...'));
+      resStr = 'Unauthorized access.'
+      return replyLine(reptoken, resStr).then(() => {
+        context.succeed(createResponse(500, 'There is no corresponding process ...'));
+      });
     }
   }
 }
