@@ -22,8 +22,6 @@ const createResponse = (statusCode, body) => {
 
 // メイン処理
 exports.handler = async (event, context) => {
-  console.log(event);
-
   const jsonbody = JSON.parse(event.body)
   const botid = jsonbody.destination;
   const reqtext = jsonbody.events[0].message.text;
