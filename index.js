@@ -32,7 +32,8 @@ exports.handler = async (event, context) => {
   const signature = crypto
     .createHmac('SHA256', LINE_CHANNELSECRET)
     .update(String(event.body)).digest('base64');
-  const signatureHeader = event.headers["x-line-signature"];
+  // リクエストヘッダーの大文字小文字は変更される可能性がある
+  const signatureHeader = event.headers[Object.keys(event.headers).find(key => key.toLowerCase() ==="x-line-signature")];
 
   // ダイジェスト値と x-line-signature の署名と一致しなければ400を返す
   if (signature !== signatureHeader) {
