@@ -6,6 +6,8 @@ const crypto = require('crypto');
 const SWITCHBOT_TOKEN = process.env.SWITCHBOT_TOKEN;
 const LINE_TOKEN = process.env.LINE_TOKEN;
 const LINE_CHANNELSECRET = process.env.LINE_CHANNELSECRET;    // 秘密鍵
+const SESAME_UUID = process.env.SESAME_UUID;    // 秘密鍵
+const SESAME_API_KEY = process.env.SESAME_API_KEY;    // 秘密鍵
 
 const CONFIG = require("./config.json");
 
@@ -49,9 +51,18 @@ exports.handler = async (event, context) => {
     console.log("Success: Response completed successfully !!");
   } else {
     if (botid === CONFIG.line.botid && groupid === CONFIG.line.groupid) {
-      if (reqtext == 'オートロック開けて') {
+      if (reqtext === 'オートロック開けて') {
         await pushAutolock();
         resStr = '開けたよ～';
+      } else  if (reqtext === '玄関の鍵？'){
+        let sesameRes = await getSesameStatus();
+        console.log(typeof(sesameRes));
+        let status = JSON.parse(sesameRes);
+        if (status.CHSesame2Status === 'locked' ) {
+          resStr = '閉まってるよ～';
+        } else if (status.CHSesame2Status === 'unlocked' ) {
+          resStr = '開いてるよ～';
+        }
       } else {
         resStr = 'ばなないす♪';
       }
@@ -120,6 +131,58 @@ function pushAutolock() {
         console.log('Success: Communication successful completion!!: SwitchBot');
         console.log(body);
         resolve();
+      } else {
+        console.log(`Failed: ${error}`);
+        resolve();
+      }
+    });
+  });
+}
+
+function getSesameStatus() {
+  return new Promise((resolve, reject) => {
+    const autolockId = CONFIG.switchbot.autolock
+    const url = `https://app.candyhouse.co/api/sesame2/${SESAME_UUID}`;
+
+    let options = {
+      uri: url,
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": `${SESAME_API_KEY}`,
+      }
+    };
+    request.get(options, function (error, response, body) {
+      if (!error) {
+
+        console.log('Success: Communication successful completion!!: Sesame');
+        console.log(body);
+        resolve(body);
+      } else {
+        console.log(`Failed: ${error}`);
+        resolve();
+      }
+    });
+  });
+}
+
+function lockSesame() {
+  return new Promise((resolve, reject) => {
+    const autolockId = CONFIG.switchbot.autolock
+    const url = `https://app.candyhouse.co/api/sesame2/${SESAME_UUID}`;
+
+    let options = {
+      uri: url,
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": `${SESAME_API_KEY}`,
+      }
+    };
+    request.get(options, function (error, response, body) {
+      if (!error) {
+
+        console.log('Success: Communication successful completion!!: Sesame');
+        console.log(body);
+        resolve(body);
       } else {
         console.log(`Failed: ${error}`);
         resolve();
