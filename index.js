@@ -93,7 +93,27 @@ function replyLine(reptoken, resStr) {
         "replyToken": reptoken,
         "messages": [{
           "type": "text",
-          "text": resStr
+          "text": resStr,
+          "quickReply": {
+            "items": [
+              {
+                "type": "action",
+                "action": {
+                  "type": "message",
+                  "label": "オートロック",
+                  "text": "オートロック開けて"
+                }
+              },
+              {
+                "type": "action",
+                "action": {
+                  "type": "message",
+                  "label": "玄関鍵の状態",
+                  "text": "玄関の鍵は閉まってる？"
+                }
+              }
+            ]
+          }
         }]
       }
     };
