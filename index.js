@@ -234,8 +234,8 @@ function changeSesameStatus(status) {
 
 function generateRandomTag(secret) {
   // * key:key-secret_hex to data
-  // let key = Buffer.from(secret, 'hex')
-  let key = '0000000000000000c80c1c92278745ea'
+  let key = Buffer.from(secret, 'hex')
+  // let key = '0000000000000000c80c1c92278745ea'
 
   // message
   // 1. timestamp  (SECONDS SINCE JAN 01 1970. (UTC))  // 1621854456905
