@@ -6,8 +6,8 @@ const aesCmac = require('node-aes-cmac').aesCmac;
 
 const SWITCHBOT_TOKEN = process.env.SWITCHBOT_TOKEN;
 const LINE_TOKEN = process.env.LINE_TOKEN;
-const LINE_CHANNELSECRET = process.env.LINE_CHANNELSECRET;    // 秘密鍵
-const SESAME_API_KEY = process.env.SESAME_API_KEY;    // 秘密鍵
+const LINE_CHANNELSECRET = process.env.LINE_CHANNELSECRET;
+const SESAME_API_KEY = process.env.SESAME_API_KEY;
 
 const CONFIG = require("./config.json");
 
@@ -54,7 +54,7 @@ exports.handler = async (event, context) => {
       if (reqtext === 'オートロック開けて') {
         await pushAutolock();
         resStr = '開けたよ～';
-      } else  if (reqtext === '玄関の鍵は開いてる？'){
+      } else  if (reqtext === '玄関の鍵は閉まってる？'){
         let sesameRes = await getSesameStatus();
         let status = JSON.parse(sesameRes);
         if (status.CHSesame2Status === 'locked' ) {
@@ -102,7 +102,7 @@ function replyLine(reptoken, resStr) {
           "quickReply": {
             "items": [
               {
-                "type": "action", // ③
+                "type": "action",
                 "action": {
                   "type": "message",
                   "label": "オートロック",
@@ -114,7 +114,7 @@ function replyLine(reptoken, resStr) {
                 "action": {
                   "type": "message",
                   "label": "玄関鍵の状態",
-                  "text": "玄関の鍵は開いてる？"
+                  "text": "玄関の鍵は閉まってる？"
                 }
               }
             ]
@@ -152,7 +152,6 @@ function pushAutolock() {
     };
     request.post(options, function (error, response, body) {
       if (!error) {
-
         console.log('Success: Communication successful completion!!: SwitchBot');
         console.log(body);
         resolve();
