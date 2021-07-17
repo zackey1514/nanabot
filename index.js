@@ -184,3 +184,29 @@ function getSesameStatus() {
     });
   });
 }
+
+function lockSesame() {
+  return new Promise((resolve, reject) => {
+    const autolockId = CONFIG.switchbot.autolock
+    const url = `https://app.candyhouse.co/api/sesame2/${SESAME_UUID}`;
+
+    let options = {
+      uri: url,
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": `${SESAME_API_KEY}`,
+      }
+    };
+    request.get(options, function (error, response, body) {
+      if (!error) {
+
+        console.log('Success: Communication successful completion!!: Sesame');
+        console.log(body);
+        resolve(body);
+      } else {
+        console.log(`Failed: ${error}`);
+        resolve();
+      }
+    });
+  });
+}
