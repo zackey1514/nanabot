@@ -2,11 +2,11 @@
 
 const request = require("request");
 const crypto = require('crypto');
+const aesCmac = require('node-aes-cmac').aesCmac;
 
 const SWITCHBOT_TOKEN = process.env.SWITCHBOT_TOKEN;
 const LINE_TOKEN = process.env.LINE_TOKEN;
 const LINE_CHANNELSECRET = process.env.LINE_CHANNELSECRET;    // 秘密鍵
-const SESAME_UUID = process.env.SESAME_UUID;    // 秘密鍵
 const SESAME_API_KEY = process.env.SESAME_API_KEY;    // 秘密鍵
 
 const CONFIG = require("./config.json");
@@ -54,15 +54,20 @@ exports.handler = async (event, context) => {
       if (reqtext === 'オートロック開けて') {
         await pushAutolock();
         resStr = '開けたよ～';
-      } else  if (reqtext === '玄関の鍵？'){
+      } else  if (reqtext === '玄関の鍵は開いてる？'){
         let sesameRes = await getSesameStatus();
-        console.log(typeof(sesameRes));
         let status = JSON.parse(sesameRes);
         if (status.CHSesame2Status === 'locked' ) {
           resStr = '閉まってるよ～';
         } else if (status.CHSesame2Status === 'unlocked' ) {
           resStr = '開いてるよ～';
         }
+      } else  if (reqtext === '玄関閉めて'){
+        let sesameRes = await changeSesameStatus('lock');
+        resStr = '閉めたよ～'
+      } else  if (reqtext === '玄関開けて'){
+        let sesameRes = await changeSesameStatus('unlock');
+        resStr = '開けたよ～'
       } else {
         resStr = 'ばなないす♪';
       }
@@ -93,7 +98,27 @@ function replyLine(reptoken, resStr) {
         "replyToken": reptoken,
         "messages": [{
           "type": "text",
-          "text": resStr
+          "text": resStr,
+          "quickReply": {
+            "items": [
+              {
+                "type": "action", // ③
+                "action": {
+                  "type": "message",
+                  "label": "オートロック",
+                  "text": "オートロック開けて"
+                }
+              },
+              {
+                "type": "action",
+                "action": {
+                  "type": "message",
+                  "label": "玄関鍵の状態",
+                  "text": "玄関の鍵は開いてる？"
+                }
+              }
+            ]
+          }
         }]
       }
     };
@@ -141,8 +166,8 @@ function pushAutolock() {
 
 function getSesameStatus() {
   return new Promise((resolve, reject) => {
-    const autolockId = CONFIG.switchbot.autolock
-    const url = `https://app.candyhouse.co/api/sesame2/${SESAME_UUID}`;
+    const uuid = CONFIG.sesame.uuid
+    const url = `https://app.candyhouse.co/api/sesame2/${uuid}`;
 
     let options = {
       uri: url,
@@ -165,28 +190,62 @@ function getSesameStatus() {
   });
 }
 
-function lockSesame() {
+function changeSesameStatus(status) {
   return new Promise((resolve, reject) => {
-    const autolockId = CONFIG.switchbot.autolock
-    const url = `https://app.candyhouse.co/api/sesame2/${SESAME_UUID}`;
+    const uuid = CONFIG.sesame.uuid
+    const url = `https://app.candyhouse.co/api/sesame2/${uuid}/cmd`;
+    const base64History = Buffer.from("test2").toString('base64');
+    const SESAME_SECRET_KEY = 'AAAAAAAAAAAAyAwckieHRepOxgAEpA/wKHKHSLSkE9auRQyQ83GGikmRGBVCRpRbLB6MP5/H6ElYzo+R/VtSxdmBiSnomW4SwgOzjrt4R7GjAACFm4PfA/3w1OlPFPGdWvL0'
+    const sign = generateRandomTag(SESAME_SECRET_KEY);
+
+    let cmd = '';
+    switch(status) {
+      case 'lock':
+        cmd = 82;
+        break;
+      case 'unlock':
+        cmd = 83;
+        break;
+    }
 
     let options = {
       uri: url,
       headers: {
-        "Content-Type": "application/json",
         "X-API-KEY": `${SESAME_API_KEY}`,
+      },
+      form: {
+        "cmd": cmd,
+        "history": base64History,
+        "sign": sign,
       }
     };
-    request.get(options, function (error, response, body) {
+    // TODO エラー処理書く
+    request.post(options, function (error, response, body) {
       if (!error) {
-
         console.log('Success: Communication successful completion!!: Sesame');
         console.log(body);
-        resolve(body);
+        resolve();
       } else {
         console.log(`Failed: ${error}`);
         resolve();
       }
     });
   });
+}
+
+function generateRandomTag(secret) {
+  // * key:key-secret_hex to data
+  // let key = Buffer.from(secret, 'hex')
+  let key = '0000000000000000c80c1c92278745ea'
+
+  // message
+  // 1. timestamp  (SECONDS SINCE JAN 01 1970. (UTC))  // 1621854456905
+  // 2. timestamp to uint32  (little endian)   //f888ab60
+  // 3. remove most-significant byte    //0x88ab60
+  const date = Math.floor(Date.now() / 1000);
+  const dateDate = Buffer.allocUnsafe(4);
+  dateDate.writeUInt32LE(date);
+  const message = Buffer.from(dateDate.slice(1, 4));
+
+  return aesCmac(key, message);
 }
