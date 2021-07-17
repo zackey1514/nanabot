@@ -5,9 +5,8 @@ const crypto = require('crypto');
 
 const SWITCHBOT_TOKEN = process.env.SWITCHBOT_TOKEN;
 const LINE_TOKEN = process.env.LINE_TOKEN;
-const LINE_CHANNELSECRET = process.env.LINE_CHANNELSECRET;    // 秘密鍵
-const SESAME_UUID = process.env.SESAME_UUID;    // 秘密鍵
-const SESAME_API_KEY = process.env.SESAME_API_KEY;    // 秘密鍵
+const LINE_CHANNELSECRET = process.env.LINE_CHANNELSECRET;
+const SESAME_API_KEY = process.env.SESAME_API_KEY;
 
 const CONFIG = require("./config.json");
 
@@ -54,9 +53,8 @@ exports.handler = async (event, context) => {
       if (reqtext === 'オートロック開けて') {
         await pushAutolock();
         resStr = '開けたよ～';
-      } else  if (reqtext === '玄関の鍵？'){
+      } else  if (reqtext === '玄関の鍵は閉まってる？'){
         let sesameRes = await getSesameStatus();
-        console.log(typeof(sesameRes));
         let status = JSON.parse(sesameRes);
         if (status.CHSesame2Status === 'locked' ) {
           resStr = '閉まってるよ～';
@@ -147,7 +145,6 @@ function pushAutolock() {
     };
     request.post(options, function (error, response, body) {
       if (!error) {
-
         console.log('Success: Communication successful completion!!: SwitchBot');
         console.log(body);
         resolve();
@@ -161,8 +158,8 @@ function pushAutolock() {
 
 function getSesameStatus() {
   return new Promise((resolve, reject) => {
-    const autolockId = CONFIG.switchbot.autolock
-    const url = `https://app.candyhouse.co/api/sesame2/${SESAME_UUID}`;
+    const uuid = CONFIG.sesame.uuid
+    const url = `https://app.candyhouse.co/api/sesame2/${uuid}`;
 
     let options = {
       uri: url,
@@ -173,33 +170,6 @@ function getSesameStatus() {
     };
     request.get(options, function (error, response, body) {
       if (!error) {
-
-        console.log('Success: Communication successful completion!!: Sesame');
-        console.log(body);
-        resolve(body);
-      } else {
-        console.log(`Failed: ${error}`);
-        resolve();
-      }
-    });
-  });
-}
-
-function lockSesame() {
-  return new Promise((resolve, reject) => {
-    const autolockId = CONFIG.switchbot.autolock
-    const url = `https://app.candyhouse.co/api/sesame2/${SESAME_UUID}`;
-
-    let options = {
-      uri: url,
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-KEY": `${SESAME_API_KEY}`,
-      }
-    };
-    request.get(options, function (error, response, body) {
-      if (!error) {
-
         console.log('Success: Communication successful completion!!: Sesame');
         console.log(body);
         resolve(body);
